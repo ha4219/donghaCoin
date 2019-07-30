@@ -42,6 +42,7 @@ const createNewBlock = data => {
         newTimestamp,
         data
     );
+    addBlockToChain(newBlock);
     return newBlock;
 };
 
@@ -64,7 +65,7 @@ const isNewBlockValid = (candidateBlock, latestBlock) => {
     return true;
 }
 
-const isNewStructureValid = () => {
+const isNewStructureValid = (block) => {
     return (
         typeof block.index === 'number' &&
         typeof block.hash === 'string' &&
@@ -75,7 +76,7 @@ const isNewStructureValid = () => {
 };
 
 const isChainValid = candidateChain => {
-    const isGenesisValid = (blck) => {
+    const isGenesisValid = (block) => {
         return JSON.stringify(block) === JSON.stringify(genesisBlock);
     }
     if (!isGenesisValid(candidateChain[0])){
@@ -92,7 +93,7 @@ const isChainValid = candidateChain => {
 
 const replaceChain = candidateChain => {
     if(isChainValid(candidateChain) && candidateChain.length > getBlockchain().length){
-        getBlockchain() = candidateChain;
+        blockchain = candidateChain;
         return true;
     }else{
         return false;
@@ -107,3 +108,12 @@ const addBlockToChain = candidateBlock => {
         return false;
     }
 }
+
+module.exports = {
+    getBlockchain,
+    createNewBlock,
+    getLastBlock,
+    isNewStructureValid,
+    addBlockToChain,
+    replaceChain,
+};
