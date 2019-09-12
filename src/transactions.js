@@ -4,6 +4,8 @@ elliptic = require("elliptic");
 
 const ec = new elliptic.ec("secp256k1");
 
+const COINBASE_AMOUNT = 50;
+
 class TxOut {
   constructor(address, amount) {
     this.address = address;
@@ -44,17 +46,28 @@ const findUTxOut = (txOutId, txOutIndex, uTxOutList) => {
   );
 };
 
-const signTxIn = (tx, txInIndex, priavteKey, uTxOut) => {
+const signTxIn = (tx, txInIndex, priavteKey, uTxOutList) => {
   const txIn = tx.txIns[txIndex];
   const dataToSign = tx.id;
 
-  const referencedUTxOut = findUTxOut(txIn.txOutId, tx.txOutIndex, uTxOuts);
+  const referencedUTxOut = findUTxOut(txIn.txOutId, tx.txOutIndex, uTxOutList);
   if (referencedUTxOut === null) {
     return;
+  }
+  const referencedAddress = referencedUTxOut.address;
+  if(getPublicKey(priavteKey) !== referencedAddress){
+      return false;
   }
   const key = ec.keyFromPrivate(priavteKey, "hex");
   const signature = utils.toHexString(key.sign(dataToSign).toDER());
   return signature;
+};
+
+const getPublicKey = priavteKey => {
+  return ec
+    .keyFromPrivate(priavteKey, "hex")
+    .getPublicKey()
+    .encode("hex");
 };
 
 const updateUTxOuts = (newTxs, uTxOutList) => {
@@ -138,4 +151,74 @@ const isTxStructureValid = tx => {
   }
 
   return true;
+};
+
+const validateTxIn = (txIn, tx, uTxOutList) => {
+  const wantedTxOut = uTxOutList.find(
+    uTxOut =>
+      uTxOut.txOutId === txIn.txOutId && uTxOut.txOutIndex === txIn.txOutIndex
+  );
+  if (wantedTxOut === null) {
+    return false;
+  }
+  const address = wantedTxOut.address;
+  const key = ec.keyFromPublic(address, "hex");
+  return key.verify(tx.id, txIn.signature);
+};
+
+const getAmountInTxIn = (txIn, uTxOutList) =>
+  findUTxOut(txIn.txOutId, txIn.txOutIndex, uTxOutList).amount;
+
+const validateTx = (tx, uTxOutList) => {
+  if (getTxId(tx) !== tx.id) {
+    return false;
+  }
+  if (!isTxStructureValid(tx)) {
+    return false;
+  }
+  const hasValidTxIns = tx.txIns.map(txIn =>
+    validateTxIn(txIn, tx, uTxOutList)
+  );
+
+  if (!hasValidTxIns) {
+    return false;
+  }
+
+  const amountInTxIns = tx.txIns
+    .map(txIn => getAmountInTxIn(txIn, uTxOutList))
+    .reduce((a, b) => a + b, 0);
+
+  const amountInTxOuts = tx.txOuts
+    .map(txOut => txOut.amount)
+    .reduce((a, b) => a + b, 0);
+
+  if (amountInTxIns !== amountInTxOuts) {
+    return false;
+  }
+
+  return true;
+};
+
+const validateCoinBaseTx = (tx, blockIndex) => {
+  if (getTxId(tx) !== tx.id) {
+    return false;
+  } else if (tx.txIns.length !== 1) {
+    return false;
+  } else if (tx.txIns[0].txOutIndex !== blockIndex) {
+    return false;
+  } else if (tx.txOuts.length !== 1) {
+    return false;
+  } else if (tx.txOuts[0].amount !== COINBASE_AMOUNT) {
+    return false;
+  }
+  return true;
+};
+
+module.exports = {
+    getPublicKey,
+    getTxId,
+    signTxIn,
+    TxIn,
+    Transaction,
+    TxOut,
 };
