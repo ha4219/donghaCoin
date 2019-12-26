@@ -226,12 +226,30 @@ const createCoinbaseTx = (address, blockIndex) => {
   return tx;
 };
 
+const hasDuplicates = (txIns) => {
+  const groups = _.countBy(txIns, txIn => txIn.txOutId + txIn.txOutIndex);
+
+  return _(groups).map(value => {
+    if(value > 1){
+      console.log("Found a duplicated txIn");
+      return true;
+    }else{
+      return false;
+    }
+  })
+};
+
 const validateBlockTx = (tx, uTxOutList, blockIndex) => {
   const coinbaseTx = tx[0];
   if(!validateCoinBaseTx(coinbaseTx, blockIndex)){
     console.log("Coinbase Tx invalid");
   }
-  const txIns = _()
+  const txIns = _(tx).map(tx => tx.Ins).flatten().value();
+
+  if(!hasDuplicates(txIns)){
+    console.log("Found duplicated txIns");
+    return false;
+  }
 };
 
 const processTxs = (txs, uTxOutList, blockIndex) => {
