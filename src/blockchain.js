@@ -1,12 +1,16 @@
 const CryptoJS = require("crypto-js"),
   hexToBinary = require("hex-to-binary"),
   Transactions = require('./transactions'),
-  Wallet = require('./wallet');
+  _ = require("lodash"),
+  Wallet = require('./wallet'),
+  Mempool = require("./memPool");
 
 
-const {getBalance, getPublicFromWallet, createCoinbaseTx} = Wallet;
+const {getBalance, getPublicFromWallet, createCoinbaseTx, createTx, getPrivateFromWallet} = Wallet;
 
 const {createCoinbaseTx, processTxs} = Transactions;
+
+const {addToMempool, getMempool} = Mempool;
 
 const BLOCK_GENERATION_INTERVAL = 10;
 const DIFFICULTY_ADJUSTMENT_INTERVAL = 10;
@@ -70,7 +74,7 @@ const createNewBlock = () => {
     getPublicFromWallet(),
     getNewestBlock().index + 1
   );
-  const blockData = [coinbaseTx];
+  const blockData = [coinbaseTx].concat(getMempool());
   return createNewRawBlock(blockData);
 };
 
@@ -180,6 +184,10 @@ const isBlockValid = (candidateBlock, latestBlock) => {
   return true;
 };
 
+const sendTx = (address, mount) => {
+  const tx = create
+};
+
 const isBlockStructureValid = block => {
   return (
     typeof block.index === "number" &&
@@ -242,9 +250,16 @@ const addBlockToChain = candidateBlock => {
   }
 };
 
+const getUTxOutList = () => _.cloneDeep(uTxOuts);
+
 const getAccountBalance = () =>
  getBalance(getPublicFromWallet(). uTxOuts);
 
+const sendTx = (address, amount) => {
+  const tx = createTx(address, amount, getPrivateFromWallet(), getUTxOutList());
+  addToMempool(tx, getUTxOutList());
+  return tx;
+};
 
 module.exports = {
   getNewestBlock,
@@ -253,5 +268,6 @@ module.exports = {
   isBlockStructureValid,
   addBlockToChain,
   replaceChain,
-  getAccountBalance
+  getAccountBalance,
+  sendTx
 };

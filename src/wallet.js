@@ -76,7 +76,8 @@ const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
         const txIn = new TxIn();
         txIn.txOutId = uTxOut.txOutId;
         tx.txOutIndex = uTxOut.txOutIndex;
-    }
+        return txIn;
+    };
 
     const unsignedTxIns = includedUTxOuts.map(toUnsignedTxIns);
 
@@ -95,5 +96,7 @@ const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
 module.exports = {
   initWallet,
   getBalance,
-  getPublicFromWallet
+  getPublicFromWallet,
+  createTx,
+  getPrivateFromWallet,
 };
