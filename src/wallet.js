@@ -93,5 +93,7 @@ const createTx = (receiverAddress, amount, privateKey, uTxOutList) => {
 };
 
 module.exports = {
-  initWallet
+  initWallet,
+  getBalance,
+  getPublicFromWallet
 };
