@@ -219,7 +219,8 @@ const createCoinbaseTx = (address, blockIndex) => {
   const tx = new Transaction();
   const txIn = new TxIn();
   txIn.signature = "";
-  txIn.txOutId = blockIndex;
+  txIn.txOutId = "";
+  txIn.txOutIndex = blockIndex;
   tx.txIns = [txIn];
   tx.txOuts = (new TxOut(address, COINBASE_AMOUNT));
   tx.id = getTxId(tx);
@@ -236,20 +237,25 @@ const hasDuplicates = (txIns) => {
     }else{
       return false;
     }
-  })
+  }).includes(true);
 };
 
-const validateBlockTx = (tx, uTxOutList, blockIndex) => {
-  const coinbaseTx = tx[0];
+const validateBlockTx = (txs, uTxOutList, blockIndex) => {
+  const coinbaseTx = txs[0];
   if(!validateCoinBaseTx(coinbaseTx, blockIndex)){
     console.log("Coinbase Tx invalid");
+    return false;
   }
-  const txIns = _(tx).map(tx => tx.Ins).flatten().value();
+  const txIns = _(txs).map(tx => tx.txIns).flatten().value();
 
   if(!hasDuplicates(txIns)){
     console.log("Found duplicated txIns");
     return false;
   }
+
+  const nonCoinbaseTx = txs.slice(1);
+
+  return nonCoinbaseTx.map(tx => validateTx(tx, uTxOutList)).reduce((a, b) => a+b, true);
 };
 
 const processTxs = (txs, uTxOutList, blockIndex) => {
@@ -267,4 +273,5 @@ module.exports = {
     Transaction,
     TxOut,
     createCoinbaseTx,
+    processTxs,
 };
