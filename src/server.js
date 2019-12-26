@@ -2,12 +2,14 @@ const express = require("express"),
   bodyParser = require("body-parser"),
   morgan = require("morgan"),
   Blockchain = require("./blockchain"),
+  P2P = require("./p2p"),
+  Mempool = require("./memPool"),
   Wallet = require("./wallet");
-P2P = require("./p2p");
 
 const { getBlockchain, createNewBlock, getAccountBalance, sendTx } = Blockchain;
 const { startP2PServer, connectToPeers } = P2P;
 const { initWallet } = Wallet;
+const { getMempool } = Mempool;
 
 // Psssst. Don't forget about typing 'export HTTP_PORT=4000' in your console
 const PORT = process.env.HTTP_PORT || 3000;
@@ -18,38 +20,38 @@ app.use(morgan("combined"));
 
 app
   .route("/blocks")
-  .get("/blocks", (req, res) => {
-    res.send(getBlockchain());
+  .get((req, res) => {
+    res.send(getMempool());
   })
-  .post("/blocks", (req, res) => {
+  .post((req, res) => {
     const newBlock = createNewBlock();
     res.send(newBlock);
   });
 
 app.post("/peers", (req, res) => {
-  const {
-    body: { peer }
-  } = req;
+  const { body: { peer } } = req;
   connectToPeers(peer);
   res.send();
 });
 
 app.get("/me/balance", (req, res) => {
   const balance = getAccountBalance();
-  res.send({balance});
-})
+  res.send({ balance });
+});
 
-app.route("/transaction")
+app
+  .route("/transactions")
   .get((req, res) => {})
   .post((req, res) => {
-    try{
-      const { bdoy: {address, amount} } = req;
-      if (address === undefined || amount === undefined){
-        throw Error("Plz specify an address and an amount");
-      }else{
-        const res = sendTx(address, amount);
+    try {
+      const { body: { address, amount } } = req;
+      if (address === undefined || amount === undefined) {
+        throw Error("Please specify and address and an amount");
+      } else {
+        const resPonse = sendTx(address, amount);
+        res.send(resPonse);
       }
-    } catch(e){
+    } catch (e) {
       res.status(400).send(e.message);
     }
   });
