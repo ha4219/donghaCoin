@@ -74,9 +74,9 @@ const getPublicKey = priavteKey => {
 const updateUTxOuts = (newTxs, uTxOutList) => {
   const newUTxOuts = newTxs
     .map(tx => {
-      tx.txOuts.map((txOut, index) => {
-        new UTxOut(tx.id, index, txOut.address, txOut.amount);
-      });
+      tx.txOuts.map((txOut, index) => 
+        new UTxOut(tx.id, index, txOut.address, txOut.amount)
+      );
     })
     .reduce((a, b) => a.concat(b), []);
 
@@ -274,4 +274,5 @@ module.exports = {
     TxOut,
     createCoinbaseTx,
     processTxs,
+    validateTx,
 };
